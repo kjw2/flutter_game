@@ -1352,6 +1352,15 @@ class XpShard extends CircleComponent with HasGameReference<SurvivorGame> {
   double _magnetSpeed = 0;
   double _animationTime = 0;
   bool isMagnetized = false;
+  bool _forceMagnetized = false;
+
+  bool get isForceMagnetized => _forceMagnetized;
+
+  void triggerGlobalMagnet() {
+    _forceMagnetized = true;
+    isMagnetized = true;
+    _magnetSpeed = math.max(_magnetSpeed, 280);
+  }
 
   @override
   void update(double dt) {
@@ -1363,7 +1372,7 @@ class XpShard extends CircleComponent with HasGameReference<SurvivorGame> {
     final magnetDistance =
         game.player.radius + radius + 54 + game.player.pickupRadius;
 
-    if (!isMagnetized && distance <= magnetDistance) {
+    if (!_forceMagnetized && !isMagnetized && distance <= magnetDistance) {
       isMagnetized = true;
     }
 
@@ -1371,8 +1380,16 @@ class XpShard extends CircleComponent with HasGameReference<SurvivorGame> {
       return;
     }
 
-    _magnetSpeed = math.min(760, _magnetSpeed + dt * 1250);
-    final distanceRatio = (1 - (distance / magnetDistance)).clamp(0.0, 1.0);
+    final effectiveMagnetDistance = _forceMagnetized
+        ? math.max(magnetDistance, Player.baseRadius * 80)
+        : magnetDistance;
+    _magnetSpeed = math.min(
+      _forceMagnetized ? 1180 : 760,
+      _magnetSpeed + dt * (_forceMagnetized ? 1900 : 1250),
+    );
+    final distanceRatio = _forceMagnetized
+        ? 1.0
+        : (1 - (distance / effectiveMagnetDistance)).clamp(0.0, 1.0);
     final pullSpeed = _magnetSpeed + distanceRatio * 240;
     position += toPlayer.normalized() * pullSpeed * dt;
   }
@@ -1426,6 +1443,15 @@ class GoldPickup extends CircleComponent with HasGameReference<SurvivorGame> {
   double _magnetSpeed = 0;
   double _animationTime = 0;
   bool isMagnetized = false;
+  bool _forceMagnetized = false;
+
+  bool get isForceMagnetized => _forceMagnetized;
+
+  void triggerGlobalMagnet() {
+    _forceMagnetized = true;
+    isMagnetized = true;
+    _magnetSpeed = math.max(_magnetSpeed, 300);
+  }
 
   @override
   void update(double dt) {
@@ -1437,7 +1463,7 @@ class GoldPickup extends CircleComponent with HasGameReference<SurvivorGame> {
     final magnetDistance =
         game.player.radius + radius + 54 + game.player.pickupRadius;
 
-    if (!isMagnetized && distance <= magnetDistance) {
+    if (!_forceMagnetized && !isMagnetized && distance <= magnetDistance) {
       isMagnetized = true;
     }
 
@@ -1445,8 +1471,16 @@ class GoldPickup extends CircleComponent with HasGameReference<SurvivorGame> {
       return;
     }
 
-    _magnetSpeed = math.min(820, _magnetSpeed + dt * 1380);
-    final distanceRatio = (1 - (distance / magnetDistance)).clamp(0.0, 1.0);
+    final effectiveMagnetDistance = _forceMagnetized
+        ? math.max(magnetDistance, Player.baseRadius * 80)
+        : magnetDistance;
+    _magnetSpeed = math.min(
+      _forceMagnetized ? 1240 : 820,
+      _magnetSpeed + dt * (_forceMagnetized ? 1980 : 1380),
+    );
+    final distanceRatio = _forceMagnetized
+        ? 1.0
+        : (1 - (distance / effectiveMagnetDistance)).clamp(0.0, 1.0);
     final pullSpeed = _magnetSpeed + distanceRatio * 260;
     position += toPlayer.normalized() * pullSpeed * dt;
   }
@@ -1510,13 +1544,22 @@ class HealthPotionPickup extends CircleComponent
   double _magnetSpeed = 0;
   double _animationTime = 0;
   bool isMagnetized = false;
+  bool _forceMagnetized = false;
+
+  bool get isForceMagnetized => _forceMagnetized;
+
+  void triggerGlobalMagnet() {
+    _forceMagnetized = true;
+    isMagnetized = true;
+    _magnetSpeed = math.max(_magnetSpeed, 280);
+  }
 
   @override
   void update(double dt) {
     super.update(dt);
     _animationTime += dt;
 
-    if (game.player.health >= game.player.maxHealth) {
+    if (!_forceMagnetized && game.player.health >= game.player.maxHealth) {
       isMagnetized = false;
       _magnetSpeed = 0;
       return;
@@ -1527,7 +1570,7 @@ class HealthPotionPickup extends CircleComponent
     final magnetDistance =
         game.player.radius + radius + 54 + game.player.pickupRadius;
 
-    if (!isMagnetized && distance <= magnetDistance) {
+    if (!_forceMagnetized && !isMagnetized && distance <= magnetDistance) {
       isMagnetized = true;
     }
 
@@ -1535,8 +1578,16 @@ class HealthPotionPickup extends CircleComponent
       return;
     }
 
-    _magnetSpeed = math.min(760, _magnetSpeed + dt * 1260);
-    final distanceRatio = (1 - (distance / magnetDistance)).clamp(0.0, 1.0);
+    final effectiveMagnetDistance = _forceMagnetized
+        ? math.max(magnetDistance, Player.baseRadius * 80)
+        : magnetDistance;
+    _magnetSpeed = math.min(
+      _forceMagnetized ? 1180 : 760,
+      _magnetSpeed + dt * (_forceMagnetized ? 1920 : 1260),
+    );
+    final distanceRatio = _forceMagnetized
+        ? 1.0
+        : (1 - (distance / effectiveMagnetDistance)).clamp(0.0, 1.0);
     final pullSpeed = _magnetSpeed + distanceRatio * 220;
     position += toPlayer.normalized() * pullSpeed * dt;
   }
@@ -1598,6 +1649,109 @@ class HealthPotionPickup extends CircleComponent
         ..color = const Color(0xFFFDECEC)
         ..strokeWidth = 1.3
         ..strokeCap = StrokeCap.round,
+    );
+  }
+}
+
+class MagnetPickup extends CircleComponent with HasGameReference<SurvivorGame> {
+  MagnetPickup({required Vector2 position})
+    : super(
+        position: position,
+        radius: 10,
+        anchor: Anchor.center,
+        paint: Paint()..color = const Color(0xFF80DEEA),
+      );
+
+  double _magnetSpeed = 0;
+  double _animationTime = 0;
+  bool isMagnetized = false;
+  bool _forceMagnetized = false;
+
+  bool get isForceMagnetized => _forceMagnetized;
+
+  void triggerGlobalMagnet() {
+    _forceMagnetized = true;
+    isMagnetized = true;
+    _magnetSpeed = math.max(_magnetSpeed, 320);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _animationTime += dt;
+
+    final toPlayer = game.player.position - position;
+    final distance = toPlayer.length;
+    final magnetDistance =
+        game.player.radius + radius + 54 + game.player.pickupRadius;
+
+    if (!_forceMagnetized && !isMagnetized && distance <= magnetDistance) {
+      isMagnetized = true;
+    }
+
+    if (!isMagnetized || distance == 0) {
+      return;
+    }
+
+    final effectiveMagnetDistance = _forceMagnetized
+        ? math.max(magnetDistance, Player.baseRadius * 80)
+        : magnetDistance;
+    _magnetSpeed = math.min(
+      _forceMagnetized ? 1260 : 860,
+      _magnetSpeed + dt * (_forceMagnetized ? 2020 : 1420),
+    );
+    final distanceRatio = _forceMagnetized
+        ? 1.0
+        : (1 - (distance / effectiveMagnetDistance)).clamp(0.0, 1.0);
+    final pullSpeed = _magnetSpeed + distanceRatio * 260;
+    position += toPlayer.normalized() * pullSpeed * dt;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    final pulse = 1 + math.sin(_animationTime * 7.2) * 0.06;
+    final glowPaint = Paint()
+      ..color = isMagnetized
+          ? const Color(0x5584FFFF)
+          : const Color(0x3380DEEA);
+    final bodyPaint = Paint()
+      ..color = isMagnetized
+          ? const Color(0xFFB2F7FF)
+          : const Color(0xFF80DEEA);
+    final tipPaint = Paint()..color = const Color(0xFFE57373);
+    final stripePaint = Paint()
+      ..color = const Color(0xFFE8FFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+
+    canvas.drawCircle(Offset.zero, radius + 3, glowPaint);
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset.zero, radius: radius * 1.05 * pulse),
+      math.pi * 0.18,
+      math.pi * 1.64,
+      false,
+      Paint()
+        ..color = bodyPaint.color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = radius * 0.7
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(
+      Offset(-radius * 0.7, radius * 0.44),
+      radius * 0.34,
+      tipPaint,
+    );
+    canvas.drawCircle(
+      Offset(radius * 0.7, radius * 0.44),
+      radius * 0.34,
+      tipPaint,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: Offset.zero, radius: radius * 0.68 * pulse),
+      math.pi * 0.24,
+      math.pi * 1.52,
+      false,
+      stripePaint,
     );
   }
 }

@@ -78,6 +78,15 @@ class MiniMapComponent extends PositionComponent
       canvas.drawCircle(point, 2.3, Paint()..color = const Color(0xFFEF6C6C));
     }
 
+    for (final magnet in game.world.children.whereType<MagnetPickup>()) {
+      final delta = magnet.position - game.player.position;
+      if (delta.length > _worldRadius) {
+        continue;
+      }
+      final point = _mapOffset(delta, center);
+      canvas.drawCircle(point, 2.4, Paint()..color = const Color(0xFF80DEEA));
+    }
+
     for (final chest in game.world.children.whereType<TreasureChest>()) {
       final delta = chest.position - game.player.position;
       if (delta.length > _worldRadius) {

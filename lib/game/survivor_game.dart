@@ -23,6 +23,7 @@ class SurvivorGame extends FlameGame with KeyboardEvents {
   static const int _maxTreasureChestsPerRun = 5;
   static const double _treasureChestIntervalSeconds = 90;
   static const double _maxSimulationDt = 1 / 30;
+  static const double _magnetDropChance = 0.01;
   static const Map<SurvivorWeaponType, String> _weaponHitAudioAssets =
       <SurvivorWeaponType, String>{
         SurvivorWeaponType.spear: 'hit_spear.wav',
@@ -979,6 +980,7 @@ class SurvivorGame extends FlameGame with KeyboardEvents {
           component is XpShard ||
           component is GoldPickup ||
           component is HealthPotionPickup ||
+          component is MagnetPickup ||
           component is TreasureChest) {
         component.removeFromParent();
       }
@@ -1030,6 +1032,9 @@ class SurvivorGame extends FlameGame with KeyboardEvents {
       growable: false,
     );
     final potionPickups = world.children.whereType<HealthPotionPickup>().toList(
+      growable: false,
+    );
+    final magnetPickups = world.children.whereType<MagnetPickup>().toList(
       growable: false,
     );
     final treasureChests = world.children.whereType<TreasureChest>().toList(
@@ -1239,7 +1244,8 @@ class SurvivorGame extends FlameGame with KeyboardEvents {
     }
 
     for (final potionPickup in potionPickups) {
-      if (player.health >= player.maxHealth) {
+      if (player.health >= player.maxHealth &&
+          !potionPickup.isForceMagnetized) {
         continue;
       }
       final pickupDistance = potionPickup.radius + player.radius + 14;
@@ -1247,6 +1253,15 @@ class SurvivorGame extends FlameGame with KeyboardEvents {
           pickupDistance * pickupDistance) {
         healPlayer(potionPickup.healAmount);
         potionPickup.removeFromParent();
+      }
+    }
+
+    for (final magnetPickup in magnetPickups) {
+      final pickupDistance = magnetPickup.radius + player.radius + 14;
+      if (magnetPickup.position.distanceToSquared(player.position) <=
+          pickupDistance * pickupDistance) {
+        activatePickupMagnet();
+        magnetPickup.removeFromParent();
       }
     }
 
@@ -1423,10 +1438,37 @@ class SurvivorGame extends FlameGame with KeyboardEvents {
   void _spawnEnemyLoot(Vector2 position) {
     if (random.nextBool()) {
       world.add(XpShard(position: position, value: 8));
-      return;
+    } else {
+      world.add(GoldPickup(position: position, value: random.nextInt(5) + 1));
     }
 
-    world.add(GoldPickup(position: position, value: random.nextInt(5) + 1));
+    if (random.nextDouble() < _magnetDropChance) {
+      world.add(
+        MagnetPickup(
+          position:
+              position +
+              Vector2(
+                (random.nextDouble() - 0.5) * 14,
+                (random.nextDouble() - 0.5) * 14,
+              ),
+        ),
+      );
+    }
+  }
+
+  void activatePickupMagnet() {
+    for (final shard in world.children.whereType<XpShard>()) {
+      shard.triggerGlobalMagnet();
+    }
+    for (final goldPickup in world.children.whereType<GoldPickup>()) {
+      goldPickup.triggerGlobalMagnet();
+    }
+    for (final potionPickup in world.children.whereType<HealthPotionPickup>()) {
+      potionPickup.triggerGlobalMagnet();
+    }
+    for (final magnetPickup in world.children.whereType<MagnetPickup>()) {
+      magnetPickup.triggerGlobalMagnet();
+    }
   }
 
   void _spawnInitialTreasureChest() {
